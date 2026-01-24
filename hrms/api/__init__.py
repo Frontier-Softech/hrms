@@ -409,6 +409,25 @@ def get_holidays_for_employee(employee: str) -> list[dict]:
 
 	return holidays
 
+@frappe.whitelist()
+def get_restricted_holidays_for_employee(employee: str) -> list[dict]:
+	holiday_list = get_holiday_list_for_employee(employee, raise_exception=False)
+	if not holiday_list:
+		return []
+
+	Holiday = frappe.qb.DocType("Restricted Holiday")
+	holidays = (
+		frappe.qb.from_(Holiday)
+		.select(Holiday.name, Holiday.holiday_date, Holiday.description)
+		.where((Holiday.parent == holiday_list))
+		.orderby(Holiday.holiday_date, order=Order.asc)
+	).run(as_dict=True)
+
+	for holiday in holidays:
+		holiday["description"] = strip_html(holiday["description"] or "").strip()
+
+	return holidays
+
 
 @frappe.whitelist()
 def get_leave_approval_details(employee: str) -> dict:

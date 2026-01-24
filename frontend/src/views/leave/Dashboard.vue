@@ -27,6 +27,7 @@
 						/>
 					</div>
 					<Holidays />
+					<RestrictedHolidays/>
 				</div>
 			</div>
 		</template>
@@ -41,6 +42,7 @@ import LeaveBalance from "@/components/LeaveBalance.vue"
 import RequestList from "@/components/RequestList.vue"
 import LeaveRequestItem from "@/components/LeaveRequestItem.vue"
 import Holidays from "@/components/Holidays.vue"
+import RestrictedHolidays from "@/components/RestrictedHolidays.vue"
 
 import { myLeaves } from "@/data/leaves"
 </script>
