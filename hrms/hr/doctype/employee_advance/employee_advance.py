@@ -20,10 +20,36 @@ class EmployeeAdvanceOverPayment(frappe.ValidationError):
 
 
 class EmployeeAdvance(Document):
-	def onload(self):
-		self.get("__onload").make_payment_via_journal_entry = frappe.db.get_single_value(
-			"Accounts Settings", "make_payment_via_journal_entry"
-		)
+	# begin: auto-generated types
+	# This code is auto-generated. Do not modify anything in this block.
+
+	from typing import TYPE_CHECKING
+
+	if TYPE_CHECKING:
+		from frappe.types import DF
+
+		advance_account: DF.Link | None
+		advance_amount: DF.Currency
+		amended_from: DF.Link | None
+		base_paid_amount: DF.Currency
+		claimed_amount: DF.Currency
+		company: DF.Link
+		currency: DF.Link
+		department: DF.Link | None
+		employee: DF.Link
+		employee_name: DF.ReadOnly | None
+		mode_of_payment: DF.Link | None
+		naming_series: DF.Literal["HR-EAD-.YYYY.-"]
+		paid_amount: DF.Currency
+		pending_amount: DF.Currency
+		posting_date: DF.Date
+		purpose: DF.SmallText
+		repay_unclaimed_amount_from_salary: DF.Check
+		return_amount: DF.Currency
+		status: DF.Literal[
+			"Draft", "Paid", "Unpaid", "Claimed", "Returned", "Partly Claimed and Returned", "Cancelled"
+		]
+	# end: auto-generated types
 
 	def validate(self):
 		validate_active_employee(self.employee)
@@ -80,8 +106,11 @@ class EmployeeAdvance(Document):
 		hrms.refetch_resource("hrms:employee_advance_balance", employee_user)
 
 	def validate_advance_account_type(self):
+		if not self.advance_account:
+			return
+
 		account_type = frappe.db.get_value("Account", self.advance_account, "account_type")
-		if account_type and (account_type != "Receivable"):
+		if not account_type or (account_type != "Receivable"):
 			frappe.throw(
 				_("Employee advance account {0} should be of type {1}.").format(
 					get_link_to_form("Account", self.advance_account), frappe.bold(_("Receivable"))
@@ -253,48 +282,7 @@ class EmployeeAdvance(Document):
 
 
 @frappe.whitelist()
-def make_bank_entry(dt, dn):
-	doc = frappe.get_doc(dt, dn)
-	payment_account = get_same_currency_bank_cash_account(doc.company, doc.currency, doc.mode_of_payment)
-
-	je = frappe.new_doc("Journal Entry")
-	je.posting_date = nowdate()
-	je.voucher_type = "Bank Entry"
-	je.company = doc.company
-	je.remark = "Payment against Employee Advance: " + dn + "\n" + doc.purpose
-	je.multi_currency = 1 if doc.currency != erpnext.get_company_currency(doc.company) else 0
-
-	je.append(
-		"accounts",
-		{
-			"account": doc.advance_account,
-			"account_currency": doc.currency,
-			"debit_in_account_currency": flt(doc.advance_amount),
-			"reference_type": "Employee Advance",
-			"reference_name": doc.name,
-			"party_type": "Employee",
-			"cost_center": erpnext.get_default_cost_center(doc.company),
-			"party": doc.employee,
-			"is_advance": "Yes",
-		},
-	)
-
-	je.append(
-		"accounts",
-		{
-			"account": payment_account.account or payment_account.name,
-			"cost_center": erpnext.get_default_cost_center(doc.company),
-			"credit_in_account_currency": flt(doc.advance_amount),
-			"account_currency": doc.currency,
-			"account_type": payment_account.account_type,
-		},
-	)
-
-	return je.as_dict()
-
-
-@frappe.whitelist()
-def create_return_through_additional_salary(doc):
+def create_return_through_additional_salary(doc: str | dict | Document) -> Document:
 	import json
 
 	if isinstance(doc, str):
@@ -314,14 +302,14 @@ def create_return_through_additional_salary(doc):
 
 @frappe.whitelist()
 def make_return_entry(
-	employee,
-	company,
-	employee_advance_name,
-	return_amount,
-	advance_account,
-	currency,
-	mode_of_payment=None,
-):
+	employee: str,
+	company: str,
+	employee_advance_name: str,
+	return_amount: str | float,
+	advance_account: str,
+	currency: str,
+	mode_of_payment: str | None = None,
+) -> dict:
 	bank_cash_account = get_same_currency_bank_cash_account(company, currency, mode_of_payment)
 
 	advance_account_currency = frappe.db.get_value("Account", advance_account, "account_currency")

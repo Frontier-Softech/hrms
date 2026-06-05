@@ -28,6 +28,27 @@ from frappe.utils import (
 
 
 class LeavePolicyAssignment(Document):
+	# begin: auto-generated types
+	# This code is auto-generated. Do not modify anything in this block.
+
+	from typing import TYPE_CHECKING
+
+	if TYPE_CHECKING:
+		from frappe.types import DF
+
+		amended_from: DF.Link | None
+		assignment_based_on: DF.Literal["", "Leave Period", "Joining Date"]
+		carry_forward: DF.Check
+		company: DF.Link | None
+		effective_from: DF.Date
+		effective_to: DF.Date
+		employee: DF.Link
+		employee_name: DF.Data | None
+		leave_period: DF.Link | None
+		leave_policy: DF.Link
+		leaves_allocated: DF.Check
+	# end: auto-generated types
+
 	def validate(self):
 		self.set_dates()
 		self.validate_policy_assignment_overlap()
@@ -126,7 +147,11 @@ class LeavePolicyAssignment(Document):
 			else []
 		)
 
-		if new_leaves_allocated == 0 and not leave_details.is_earned_leave:
+		if (
+			new_leaves_allocated == 0
+			and not leave_details.is_earned_leave
+			and not leave_details.allow_negative
+		):
 			text = _(
 				"Leave allocation is skipped for {0}, because number of leaves to be allocated is 0."
 			).format(frappe.bold(leave_details.name))
@@ -414,7 +439,7 @@ def calculate_pro_rated_leaves(
 
 
 @frappe.whitelist()
-def create_assignment_for_multiple_employees(employees, data):
+def create_assignment_for_multiple_employees(employees: str | list[str], data: str | dict) -> list[str]:
 	if isinstance(employees, str):
 		employees = json.loads(employees)
 
@@ -425,7 +450,7 @@ def create_assignment_for_multiple_employees(employees, data):
 	failed = []
 
 	for employee in employees:
-		assignment = create_assignment(employee, data)
+		assignment = create_assignment(employee, frappe._dict(data))
 		savepoint = "before_assignment_submission"
 		try:
 			frappe.db.savepoint(savepoint)
@@ -444,7 +469,7 @@ def create_assignment_for_multiple_employees(employees, data):
 
 
 @frappe.whitelist()
-def create_assignment(employee, data):
+def create_assignment(employee: str, data: frappe._dict) -> Document:
 	assignment = frappe.new_doc("Leave Policy Assignment")
 	assignment.employee = employee
 	assignment.assignment_based_on = data.assignment_based_on or None
@@ -486,6 +511,7 @@ def get_leave_type_details():
 			"is_lwp",
 			"is_earned_leave",
 			"is_compensatory",
+			"allow_negative",
 			"allocate_on_day",
 			"is_carry_forward",
 			"expire_carry_forwarded_leaves_after_days",

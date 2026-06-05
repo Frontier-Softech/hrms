@@ -16,18 +16,7 @@ from hrms.tests.utils import HRMSTestSuite
 
 
 class TestCompensatoryLeaveRequest(HRMSTestSuite):
-	@classmethod
-	def setUpClass(cls):
-		super().setUpClass()
-		cls.make_employees()
-
 	def setUp(self):
-		frappe.db.delete("Compensatory Leave Request")
-		frappe.db.delete("Leave Ledger Entry")
-		frappe.db.delete("Leave Allocation")
-		frappe.db.delete("Attendance")
-		frappe.db.delete("Leave Period")
-
 		create_leave_period(add_months(today(), -3), add_months(today(), 3), "_Test Company")
 		self.holiday_list = "_Test Compensatory Leave"
 		create_holiday_list()
@@ -47,6 +36,25 @@ class TestCompensatoryLeaveRequest(HRMSTestSuite):
 		self.assertEqual(
 			get_leave_balance_on(employee.name, compensatory_leave_request.leave_type, add_days(today(), 1)),
 			before + 1,
+		)
+
+	def test_leave_balance_on_cancel(self):
+		"""check leave balance update on cancellation of compensatory leave request"""
+		employee = get_employee()
+		mark_attendance(employee, date=add_days(today(), -1))
+
+		request_1 = get_compensatory_leave_request(employee.name, leave_date=add_days(today(), -1))
+
+		request_1.submit()
+		mark_attendance(employee)
+		request_2 = get_compensatory_leave_request(employee.name)
+
+		request_2.submit()
+		# cancel today's compensatory leave request
+		request_2.cancel()
+		self.assertEqual(
+			get_leave_balance_on(employee.name, request_2.leave_type, today()),
+			1,
 		)
 
 	def test_allocation_update_on_submit(self):

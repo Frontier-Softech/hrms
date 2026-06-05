@@ -22,6 +22,7 @@
   "currency",
   "section_break_7",
   "base",
+  "ctc",
   "column_break_9",
   "variable",
   "amended_from",
@@ -228,7 +229,8 @@
    "fetch_if_empty": 1,
    "fieldname": "max_benefits",
    "fieldtype": "Currency",
-   "label": "Maximum Benefit Amount"
+   "label": "Maximum Benefit Amount",
+   "options": "currency"
   },
   {
    "fieldname": "column_break_kjvm",
@@ -241,11 +243,17 @@
    "fieldtype": "Currency",
    "label": "Leave Encashment Amount Per Day",
    "options": "currency"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "ctc",
+   "fieldtype": "Currency",
+   "label": "Total Cost To Company (CTC)"
   }
  ],
  "is_submittable": 1,
  "links": [],
- "modified": "2026-01-09 11:52:07.106968",
+ "modified": "2026-06-05 13:20:40.794089",
  "modified_by": "Administrator",
  "module": "Payroll",
  "name": "Salary Structure Assignment",
@@ -290,6 +298,11 @@
    "share": 1,
    "submit": 1,
    "write": 1
+  },
+  {
+   "read": 1,
+   "role": "Employee",
+   "select": 1
   }
  ],
  "row_format": "Dynamic",
